@@ -118,13 +118,16 @@ attachToExportItem index expInfo iface ifaceMap instIfaceMap export =
                                , expItemPats = patsyns
                                } = e { expItemFixities =
       nubByName fst $ expItemFixities e ++
+
+      [ (n, f) | n <- concatMap (getMainDeclBinder . fst) patsyns
+               , Just f <- [instLookup instFixMap n' iface ifaceMap instIfaceMap]
+      ] ++
+
       [ (n',f) | n <- getMainDeclBinder d
               , Just subs <- [instLookup instSubMap n iface ifaceMap instIfaceMap]
-              , n' <- n : (subs ++ patsyn_names)
+              , n' <- n : subs
               , Just f <- [instLookup instFixMap n' iface ifaceMap instIfaceMap]
       ] }
-      where
-        patsyn_names = concatMap (getMainDeclBinder . fst) patsyns
 
     attachFixities e = e
     -- spanName: attach the location to the name that is the same file as the instance location
