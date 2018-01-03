@@ -1,4 +1,3 @@
-
 {-# LANGUAGE CPP, PatternGuards #-}
 -----------------------------------------------------------------------------
 -- |
@@ -38,7 +37,7 @@ import Type
 import TyCoRep
 import TysPrim ( alphaTyVars )
 import TysWiredIn ( listTyConName, starKindTyConName, unitTy )
-import PrelNames ( hasKey, eqTyConKey, funTyConKey, ipClassKey
+import PrelNames ( hasKey, eqTyConKey, ipClassKey
                  , tYPETyConKey, liftedRepDataConKey )
 import Unique ( getUnique )
 import Util ( chkAppend, compareLength, dropList, filterByList, filterOut
@@ -268,7 +267,7 @@ synifyTyCon coax tc
 --
 -- Which is entirely wrong (#548). We only want to display the *return* kind,
 -- which this function obtains.
-synifyDataTyConReturnKind :: TyCon -> Maybe (LHsKind Name)
+synifyDataTyConReturnKind :: TyCon -> Maybe (LHsKind GhcRn)
 synifyDataTyConReturnKind tc
   = case splitFunTys (tyConKind tc) of
       (_, ret_kind)
