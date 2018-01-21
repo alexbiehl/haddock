@@ -162,12 +162,31 @@ createIfaces verbosity flags instIfaceMap mods = do
 processModule :: Verbosity -> ModSummary -> [Flag] -> IfaceMap -> InstIfaceMap -> Ghc (Maybe Interface)
 processModule verbosity modsum flags modMap instIfaceMap = do
   out verbosity verbose $ "Checking module " ++ moduleString (ms_mod modsum) ++ "..."
-  tm <- loadModule =<< typecheckModule =<< parseModule modsum
+  parsedMod <- parseModule modsum
+
+  let
+    mdl    = ms_mod (pm_mod_summary parsedMod)
+    dflags = ms_hspp_opts (pm_mod_summary parsedMod)
+
+  (opts, _) <- runWriterGhc (liftErrMsg (mkDocOpts (haddockOptions dflags) flags mdl))
+  let
+    -- in case the module specified OptIgnoreEports we change the
+    -- parsed module representation to have no explicit export list.
+    parsedMod'
+      | OptIgnoreExports `elem` opts =
+        parsedMod {
+          pm_parsed_source =
+            fmap (\ps -> ps {
+              hsmodExports = Nothing
+            }) (pm_parsed_source parsedMod)
+        }
+      | otherwise = parsedMod
+
+  tm <- loadModule =<< typecheckModule parsedMod'
   if not $ isBootSummary modsum then do
     out verbosity verbose "Creating interface..."
     (interface, msg) <- runWriterGhc $ createInterface tm flags modMap instIfaceMap
     liftIO $ mapM_ putStrLn msg
-    dflags <- getDynFlags
     let (haddockable, haddocked) = ifaceHaddockCoverage interface
         percentage = round (fromIntegral haddocked * 100 / fromIntegral haddockable :: Double) :: Int
         modString = moduleString (ifaceMod interface)
